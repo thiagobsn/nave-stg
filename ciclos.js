@@ -1,12 +1,29 @@
 // =============================================================
 //  Os 12 ciclos de dúvidas
-//  - ciclos comuns: 30 segundos de ondas de inimigos
+//  - ciclos comuns: ondas de inimigos; a duração depende da dificuldade
 //  - ciclo 6: prévia do Tribunal (dura até a vida dele acabar)
 //  - ciclo 12: o Tribunal, chefe final
 // =============================================================
 
 const TOTAL_CICLOS = 12;
-const DURACAO_CICLO = 30 * 60; // 30 segundos a 60 quadros por segundo
+
+// a dificuldade define quanto dura cada ciclo comum
+const DIFICULDADES = [
+  { letra: 'J', nome: 'JÚNIOR', segundos: 10, cor: '#5ac85a' },
+  { letra: 'P', nome: 'PLENO', segundos: 20, cor: '#ffd030' },
+  { letra: 'S', nome: 'SÊNIOR', segundos: 30, cor: '#ff5a6a' },
+];
+let dificuldade = DIFICULDADES[1];
+const duracaoCiclo = () => dificuldade.segundos * 60; // em quadros (60 por segundo)
+
+// Férias: bônus que aparece uma única vez por partida, num ciclo sorteado (nunca o 6 nem o 12)
+let cicloFerias = null;
+
+function sortearCicloFerias(cicloInicial) {
+  const possiveis = [];
+  for (let n = cicloInicial; n < TOTAL_CICLOS; n++) if (!ehCicloChefe(n)) possiveis.push(n);
+  cicloFerias = possiveis.length ? escolher(possiveis) : null;
+}
 
 const TITULOS_CICLO = [
   'PRAZO INICIAL',
@@ -58,18 +75,29 @@ function iniciarCiclo(n) {
   jogo.pontosInicio = placar;
   jogo.extra = false;
   jogo.agendaBuffs = agendarBuffs(n);
+
+  // as férias valem só para o ciclo em que foram pegas (e somem se não foram pegas)
+  for (let i = buffs.length - 1; i >= 0; i--) if (buffs[i].tipo === 'ferias') buffs.splice(i, 1);
+  if (nave.ferias) {
+    nave.ferias = false;
+    mostrarMensagem('AS FÉRIAS ACABARAM...', '#8fd8ff');
+  }
 }
 
-// 2 ou 3 buffs comuns em momentos aleatórios, mais o especial do ciclo (no meio dele)
+// 2 ou 3 buffs comuns em momentos aleatórios, o especial do ciclo (no meio dele)
+// e, se este for o ciclo sorteado, as Férias logo no começo
 function agendarBuffs(n) {
   if (ehCicloChefe(n)) return [];
+  const duracao = duracaoCiclo();
   const agenda = [];
   const qtd = Math.random() < 0.4 ? 3 : 2;
-  const fatia = (DURACAO_CICLO - 300) / qtd;
+  const inicio = duracao * 0.12;
+  const fatia = (duracao * 0.85 - inicio) / qtd;
   for (let i = 0; i < qtd; i++) {
-    agenda.push({ quando: Math.round(240 + fatia * i + aleatorio(0, fatia)), tipo: null });
+    agenda.push({ quando: Math.round(inicio + fatia * i + aleatorio(0, fatia)), tipo: null });
   }
-  if (BUFFS_ESPECIAIS[n]) agenda.push({ quando: DURACAO_CICLO / 2, tipo: BUFFS_ESPECIAIS[n] });
+  if (BUFFS_ESPECIAIS[n]) agenda.push({ quando: duracao / 2, tipo: BUFFS_ESPECIAIS[n] });
+  if (n === cicloFerias) agenda.push({ quando: Math.round(duracao * aleatorio(0.1, 0.35)), tipo: 'ferias' });
   return agenda;
 }
 
@@ -79,6 +107,7 @@ function soltarBuffsAgendados() {
     if (jogo.tempo < item.quando) continue;
     if (item.tipo) soltarBuff(item.tipo);
     else soltarBuffComum();
+    if (item.tipo === 'ferias') cicloFerias = null; // já saiu: não aparece de novo
     jogo.agendaBuffs.splice(i, 1);
   }
 }
@@ -131,7 +160,7 @@ function atualizarCiclo() {
         lancarOnda();
         jogo.proxOnda = Math.max(45, 120 - jogo.ciclo * 6) * aleatorio(0.8, 1.2);
       }
-      if (jogo.tempo >= DURACAO_CICLO) {
+      if (jogo.tempo >= duracaoCiclo()) {
         jogo.etapa = 'limpando';
         jogo.t = 0;
       }
@@ -212,8 +241,8 @@ function desenharMensagem() {
 
 function textoCronometro() {
   if (ehCicloChefe(jogo.ciclo)) return '--';
-  if (jogo.etapa === 'banner') return '0:30';
+  if (jogo.etapa === 'banner') return `0:${String(dificuldade.segundos).padStart(2, '0')}`;
   if (jogo.etapa !== 'ondas') return '0:00';
-  const s = Math.ceil((DURACAO_CICLO - jogo.tempo) / 60);
+  const s = Math.ceil((duracaoCiclo() - jogo.tempo) / 60);
   return `0:${String(s).padStart(2, '0')}`;
 }

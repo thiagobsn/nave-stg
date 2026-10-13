@@ -3,9 +3,9 @@
 ## Como o ranking funciona hoje
 
 - **Sem configurar nada:** cada aparelho guarda o próprio Top 10 no navegador (`localStorage`). Funciona offline e no GitHub Pages, mas cada jogador só vê os recordes do próprio aparelho.
-- **Com o Supabase configurado em `config.js`:** todos os jogadores veem o mesmo Top 10. Se a internet ou o serviço falharem, o jogo usa o ranking local automaticamente, e o recorde continua salvo no aparelho.
+- **Com o Supabase configurado em `config.js`:** todos os jogadores veem o mesmo Top 10. Se a internet ou o serviço falharem, o jogo mostra o ranking local, o recorde fica salvo no aparelho numa fila de pendentes e é **reenviado automaticamente** na próxima vez que o ranking carregar com conexão. Nenhum recorde se perde.
 
-Cada registro guarda: nome (até 10 letras), pontos, ciclo alcançado, sigla da nave, quantas horas extras a pessoa fez e se venceu o Tribunal. Na tabela, o `*` marca quem fez hora extra.
+Cada registro guarda: nome (até 10 letras), pontos, ciclo alcançado, sigla da nave, nível (`J` Júnior, `P` Pleno, `S` Sênior), quantas horas extras a pessoa fez e se venceu o Tribunal. Na tabela, o `*` marca quem fez hora extra.
 
 ## Por que o Supabase
 
@@ -32,6 +32,7 @@ create table ranking (
   pontos integer not null check (pontos between 1 and 2000000),
   ciclo integer not null check (ciclo between 1 and 12),
   nave text not null check (nave in ('CE', 'SC', 'RS', 'PR', 'MS')),
+  dificuldade text not null default 'S' check (dificuldade in ('J', 'P', 'S')),
   horas_extras integer not null default 0 check (horas_extras between 0 and 999),
   venceu boolean not null default false,
   criado_em timestamptz not null default now()
@@ -43,6 +44,13 @@ create index ranking_pontos on ranking (pontos desc);
 alter table ranking enable row level security;
 create policy "todos leem" on ranking for select using (true);
 create policy "todos inserem" on ranking for insert with check (true);
+```
+
+Se a tabela já existia antes dos níveis de dificuldade, rode só isto para acrescentar a coluna (os recordes antigos ficam como Sênior, que era a duração de 30 s):
+
+```sql
+alter table ranking
+  add column dificuldade text not null default 'S' check (dificuldade in ('J', 'P', 'S'));
 ```
 
 3. Em **Project Settings → API**, copie a **Project URL** e a chave **anon public**.

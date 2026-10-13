@@ -7,6 +7,7 @@
 
 const CHAVE_RANKING = 'nave-stg:ranking';
 const CHAVE_ULTIMO_NOME = 'nave-stg:nome';
+const CHAVE_PENDENTES = 'nave-stg:ranking-pendente'; // recordes que ainda não chegaram ao ranking online
 const TAMANHO_RANKING = 10;
 const rankingOnline = Boolean(CONFIG_RANKING.supabaseUrl && CONFIG_RANKING.supabaseChave);
 
@@ -52,19 +53,41 @@ async function chamarSupabase(caminho, opcoes = {}) {
 
 const deOnline = (r) => ({
   nome: r.nome, pontos: r.pontos, ciclo: r.ciclo, nave: r.nave,
-  horasExtras: r.horas_extras, venceu: r.venceu,
+  dificuldade: r.dificuldade, horasExtras: r.horas_extras, venceu: r.venceu,
 });
 
 const paraOnline = (e) => ({
   nome: e.nome, pontos: e.pontos, ciclo: e.ciclo, nave: e.nave,
-  horas_extras: e.horasExtras, venceu: e.venceu,
+  dificuldade: e.dificuldade, horas_extras: e.horasExtras, venceu: e.venceu,
 });
+
+const enviarOnline = (entrada) =>
+  chamarSupabase('ranking', {
+    method: 'POST',
+    headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify(paraOnline(entrada)),
+  });
+
+// reenvia recordes feitos sem internet (ou com o serviço fora do ar)
+async function enviarPendentes() {
+  const pendentes = lerArmazenamento(CHAVE_PENDENTES, []);
+  const restantes = [];
+  for (const entrada of pendentes) {
+    try {
+      await enviarOnline(entrada);
+    } catch {
+      restantes.push(entrada);
+    }
+  }
+  if (restantes.length !== pendentes.length) gravarArmazenamento(CHAVE_PENDENTES, restantes);
+}
 
 // ---------- Operações ----------
 async function carregarRanking() {
   if (rankingOnline) {
     try {
-      const campos = 'nome,pontos,ciclo,nave,horas_extras,venceu';
+      await enviarPendentes();
+      const campos = 'nome,pontos,ciclo,nave,dificuldade,horas_extras,venceu';
       const lista = await chamarSupabase(`ranking?select=${campos}&order=pontos.desc&limit=${TAMANHO_RANKING}`);
       ranking = lista.map(deOnline);
       rankingFonte = 'online';
@@ -86,13 +109,11 @@ async function registrarNoRanking(entrada) {
   gravarArmazenamento(CHAVE_ULTIMO_NOME, entrada.nome);
   if (rankingOnline) {
     try {
-      await chamarSupabase('ranking', {
-        method: 'POST',
-        headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify(paraOnline(entrada)),
-      });
+      await enviarOnline(entrada);
     } catch (erro) {
-      console.warn('Não foi possível enviar ao ranking online; ficou salvo no aparelho.', erro);
+      // guarda para tentar de novo na próxima vez que o ranking for carregado
+      gravarArmazenamento(CHAVE_PENDENTES, [...lerArmazenamento(CHAVE_PENDENTES, []), entrada]);
+      console.warn('Sem conexão com o ranking online; o recorde será reenviado depois.', erro);
     }
   }
   await carregarRanking();
@@ -144,12 +165,11 @@ function desenharTabelaRanking(y0) {
     let cor = i === 0 ? '#ffd030' : i < 3 ? '#ffb070' : '#ffffff';
     if (i === rankingDestaque) cor = (quadro >> 3) % 2 ? '#5aff8a' : '#ffffff'; // pisca a posição nova
     const fim = r.venceu ? 'FIM' : `C${String(r.ciclo).padStart(2, '0')}`;
-    const linha = `${String(i + 1).padStart(2, ' ')} ${r.nome.padEnd(10, ' ')} ${String(r.pontos).padStart(7, '0')} ${r.nave} ${fim}${r.horasExtras > 0 ? '*' : ''}`;
-    texto(linha, 8, y, cor);
+    const nivel = r.dificuldade ?? 'S'; // recordes antigos eram todos de ciclos de 30 s
+    const linha = `${String(i + 1).padStart(2, ' ')} ${r.nome.padEnd(10, ' ')} ${String(r.pontos).padStart(7, '0')} ${r.nave} ${nivel} ${fim}${r.horasExtras > 0 ? '*' : ''}`;
+    texto(linha, 4, y, cor);
   });
-  if (ranking.some((r) => r.horasExtras > 0)) {
-    texto('* FEZ HORA EXTRA', LARGURA / 2, y0 + 28 + ranking.length * 11 + 3, '#6a6a8a', 8, 'center');
-  }
+  texto('J/P/S NÍVEL   * HORA EXTRA', LARGURA / 2, y0 + 28 + ranking.length * 11 + 3, '#6a6a8a', 8, 'center');
 }
 
 carregarRanking();
