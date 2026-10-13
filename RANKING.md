@@ -78,11 +78,11 @@ git init
 git add .
 git commit -m "feat: primeira versão do Nave STG"
 git branch -M main
-git remote add origin https://github.com/SEU-USUARIO/nave-stg.git
+git remote add origin https://github.com/thiagobsn/nave-stg.git
 git push -u origin main
 ```
 
 2. No repositório, vá em **Settings → Pages**, escolha **Deploy from a branch**, branch `main`, pasta `/ (root)` e salve.
-3. Em 1 ou 2 minutos o jogo estará em `https://SEU-USUARIO.github.io/nave-stg/`.
+3. Em 1 ou 2 minutos o jogo estará em `https://thiagobsn.github.io/nave-stg/`.
 
 O endereço é HTTPS, o que o celular precisa para o som e o ranking online funcionarem bem. No celular, dá para usar **Adicionar à tela inicial** para abrir o jogo como se fosse um app.
