@@ -1,0 +1,221 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Press Start 2P", monospace;
+  color: #fff;
+  /* evita seleção, zoom por toque duplo e menu de contexto durante o jogo */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+#palco {
+  position: relative;
+}
+
+/* Resolução nativa do SNES (256x224) ampliada sem suavização */
+#tela {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #05030f;
+}
+
+/* ---------- Entrada do nome (ranking) ---------- */
+#form-nome {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(0, 0, 0, 0.78);
+  font-size: 12px;
+}
+#form-nome[hidden] {
+  display: none;
+}
+#form-nome .titulo-recorde {
+  margin: 0;
+  color: #ffd030;
+  font-size: 16px;
+}
+#form-nome label {
+  color: #8fd8ff;
+}
+#form-nome input {
+  width: 11em;
+  padding: 8px;
+  font: inherit;
+  font-size: 16px; /* 16px impede o zoom automático do iOS ao focar */
+  text-align: center;
+  text-transform: uppercase;
+  color: #fff;
+  background: #1a1030;
+  border: 2px solid #ffd030;
+  outline: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+#form-nome button,
+.botao-sistema {
+  font: inherit;
+  padding: 8px 14px;
+  color: #000;
+  background: #ffd030;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+
+/* ---------- Controles de toque ---------- */
+#controles {
+  display: none;
+}
+
+body.toque #controles {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* só as áreas dos controles recebem toque */
+}
+
+#area-analogico,
+#area-botoes,
+#area-sistema {
+  position: absolute;
+  pointer-events: auto;
+}
+
+#area-analogico {
+  left: 0;
+  bottom: 0;
+  width: 50%;
+  height: 46%;
+}
+
+#base-analogico {
+  position: absolute;
+  left: max(24px, env(safe-area-inset-left));
+  bottom: max(28px, env(safe-area-inset-bottom));
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+#manete {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 50%;
+  background: rgba(255, 208, 48, 0.55);
+  border: 2px solid #ffd030;
+}
+
+#area-botoes {
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(28px, env(safe-area-inset-bottom));
+  width: 170px;
+  height: 130px;
+}
+
+.botao {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  font: inherit;
+  font-size: 18px;
+  color: #fff;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  touch-action: none;
+}
+#botao-a {
+  right: 0;
+  top: 0;
+  background: rgba(208, 40, 60, 0.75);
+}
+#botao-b {
+  left: 0;
+  bottom: 0;
+  background: rgba(42, 90, 208, 0.75);
+}
+.botao.ativo {
+  filter: brightness(1.6);
+  transform: scale(0.94);
+}
+
+#area-sistema {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  gap: 10px;
+}
+.botao-sistema {
+  font-size: 9px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  touch-action: none;
+}
+.botao-sistema.ativo {
+  background: #ffd030;
+}
+
+/* em pé: o jogo fica no topo e os controles ocupam o espaço livre embaixo dele */
+@media (orientation: portrait) {
+  body.toque {
+    align-items: flex-start;
+    padding-top: env(safe-area-inset-top);
+  }
+  body.toque #area-analogico {
+    top: var(--fim-tela, 55%);
+    height: auto;
+    width: 55%;
+  }
+  body.toque #base-analogico {
+    top: 50%;
+    bottom: auto;
+    margin-top: -50px;
+  }
+  body.toque #area-botoes {
+    top: calc(50% + var(--fim-tela, 55%) / 2 - 55px);
+    bottom: auto;
+  }
+  body.toque #area-sistema {
+    top: calc(var(--fim-tela, 55%) + 14px);
+    bottom: auto;
+  }
+}
+
+/* deitado: o jogo fica no centro e os controles nas laterais */
+@media (orientation: landscape) {
+  body.toque #area-analogico {
+    height: 100%;
+    width: 30%;
+  }
+  body.toque #area-sistema {
+    left: auto;
+    right: max(16px, env(safe-area-inset-right));
+    transform: none;
+    top: max(12px, env(safe-area-inset-top));
+    bottom: auto;
+    flex-direction: column;
+  }
+}

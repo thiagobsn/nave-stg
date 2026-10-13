@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#05030f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <title>Nave STG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="palco">
+    <canvas id="tela" width="256" height="224"></canvas>
+
+    <!-- entrada do nome para o ranking -->
+    <form id="form-nome" hidden>
+      <p class="titulo-recorde">NOVO RECORDE!</p>
+      <label for="campo-nome">SEU NOME</label>
+      <input id="campo-nome" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done">
+      <button type="submit">SALVAR</button>
+    </form>
+  </div>
+
+  <!-- controles na tela: só aparecem em aparelhos com toque -->
+  <div id="controles" aria-hidden="true">
+    <div id="area-analogico">
+      <div id="base-analogico"><div id="manete"></div></div>
+    </div>
+    <div id="area-botoes">
+      <button class="botao" id="botao-b" data-botao="b">B</button>
+      <button class="botao" id="botao-a" data-botao="a">A</button>
+    </div>
+    <div id="area-sistema">
+      <button class="botao-sistema" id="botao-som" data-botao="som">SOM</button>
+      <button class="botao-sistema" data-botao="start">START</button>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="nucleo.js"></script>
+  <script src="som.js"></script>
+  <script src="toque.js"></script>
+  <script src="naves.js"></script>
+  <script src="jogador.js"></script>
+  <script src="inimigos.js"></script>
+  <script src="tribunal.js"></script>
+  <script src="buffs.js"></script>
+  <script src="ciclos.js"></script>
+  <script src="ranking.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
