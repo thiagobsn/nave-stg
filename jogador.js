@@ -20,9 +20,11 @@ const nave = {
   reajuste: 1, // multiplicador de dano permanente (dissídio)
   recargaApoio: 0,
   pegouDecimo1: false,
+  ferias: false, // bônus Férias: imune até o fim do ciclo
 };
 
 function reiniciarMelhorias() {
+  nave.ferias = false;
   nave.arma = 1;
   nave.escudo = 0;
   nave.reajuste = 1;
@@ -101,6 +103,12 @@ function atualizarNave() {
 
 function atingirNave() {
   if (nave.invencivel > 0 || nave.morta > 0) return;
+
+  // de férias, nada atinge a nave (e o escudo nem é gasto)
+  if (nave.ferias) {
+    faisca(nave.x, nave.y - 4);
+    return;
+  }
 
   // o escudo absorve o golpe
   if (nave.escudo > 0) {
@@ -326,6 +334,19 @@ function desenharNave() {
   }
 
   desenharEscudo();
+  desenharAuraFerias();
+}
+
+// de férias: um halo dourado e azul girando em volta da nave
+function desenharAuraFerias() {
+  if (!nave.ferias) return;
+  const cx = Math.round(nave.x);
+  const cy = Math.round(nave.y) + 1;
+  for (let i = 0; i < 8; i++) {
+    const ang = -quadro * 0.1 + (i / 8) * Math.PI * 2;
+    ctx.fillStyle = i % 2 ? '#ffd030' : '#4ab0ff';
+    ctx.fillRect(Math.round(cx + Math.cos(ang) * 14) - 1, Math.round(cy + Math.sin(ang) * 14) - 1, 2, 2);
+  }
 }
 
 // bolha azul com uma bolinha girando para cada tiro que o escudo ainda aguenta

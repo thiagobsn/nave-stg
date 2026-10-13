@@ -38,9 +38,21 @@ Cada nave tem velocidade, poder e cadência diferentes.
 
 Na pausa, Esc (ou B no celular) volta para a escolha de nave.
 
+## Níveis de dificuldade
+
+Depois de escolher a nave, você escolhe o nível, que define quanto dura cada ciclo comum:
+
+| Nível | Duração do ciclo |
+|---|---|
+| **Júnior** | 10 segundos |
+| **Pleno** | 20 segundos |
+| **Sênior** | 30 segundos |
+
+Ciclos mais longos trazem mais inimigos e, portanto, mais pontos. O ranking mostra o nível de cada recorde (`J`, `P` ou `S`).
+
 ## Ciclos, inimigos e chefes
 
-- **Ciclos comuns (30 s cada):** ondas de inimigos que ficam mais fortes a cada ciclo. Os ciclos pares acontecem numa rodovia.
+- **Ciclos comuns:** ondas de inimigos que ficam mais fortes a cada ciclo; a duração depende do nível. Os ciclos pares acontecem numa rodovia.
 - **Servos do Tribunal:** processo, martelo de juiz, carimbo e balança da justiça.
 - **Obras e rodovias:** cone, betoneira, rolo compactador e barreira zebrada.
 - **Ciclo 6, a prévia do Tribunal:** ao ser derrotado ele se divide em três. Um cai, outro foge como foguete e o terceiro luta no **CICLO EXTRA**.
@@ -57,12 +69,15 @@ Na pausa, Esc (ou B no celular) volta para a escolha de nave.
 | 6 | **Décimo 1/2** | +1 vida e escudo |
 | 8 | **Dissídio** | +25% de dano permanente |
 | 12 | **Décimo 2/2** | +1 vida, arma no máximo e escudo; com as duas parcelas, bônus de 13000 pontos |
+| sorteado | **Férias** 🏖️ | a nave fica imune até o fim do ciclo atual |
+
+As **Férias** aparecem uma única vez por partida, num ciclo sorteado entre o 1 e o 11 (nunca no 6 nem no 12), na forma de um guarda-sol. Se não forem pegas antes do ciclo acabar, somem.
 
 Perdeu todas as vidas? Na tela de game over dá para **fazer hora extra**: as vidas voltam e o jogo continua de onde parou. No ranking, quem fez hora extra ganha um `*`.
 
 ## Ranking
 
-Os 10 melhores ficam salvos no navegador de cada aparelho. Para ter um ranking único para todos os jogadores, existe a opção de usar o Supabase (grátis): o passo a passo está em [RANKING.md](RANKING.md).
+Os 10 melhores ficam salvos no navegador de cada aparelho. Para ter um ranking único para todos os jogadores, existe a opção de usar o Supabase (grátis), com reenvio automático de recordes feitos sem internet. O passo a passo está em [RANKING.md](RANKING.md).
 
 ## Rodando no seu computador
 

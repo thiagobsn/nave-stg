@@ -2,7 +2,7 @@
 //  Nave STG — estados do jogo, telas, colisões e laço principal
 // =============================================================
 
-// 'titulo' | 'selecao' | 'jogando' | 'pausa' | 'gameover' | 'nome' | 'ranking' | 'vitoria' | 'creditos'
+// 'titulo' | 'selecao' | 'dificuldade' | 'jogando' | 'pausa' | 'gameover' | 'nome' | 'ranking' | 'vitoria' | 'creditos'
 let estado = 'titulo';
 let placar = 0;
 let vidas = 3;
@@ -32,6 +32,7 @@ function iniciarPartida(tipo) {
   reiniciarMelhorias();
   limparCampo();
   posicionarNave();
+  sortearCicloFerias(CICLO_INICIAL);
   iniciarCiclo(CICLO_INICIAL);
 }
 
@@ -58,6 +59,7 @@ function encerrarPartida(venceu) {
     pontos: placar,
     ciclo: jogo.ciclo,
     nave: nave.tipo.sigla,
+    dificuldade: dificuldade.letra,
     horasExtras,
     venceu,
   };
@@ -153,6 +155,8 @@ function desenharHUD() {
     ctx.fillRect(117 + i * 5, 4, 3, 7);
   }
   if (nave.reajuste > 1) texto(`+${Math.round((nave.reajuste - 1) * 100)}%`, 104, 14, '#5ac85a');
+  if (nave.ferias) texto('FÉRIAS', 146, 14, (quadro >> 3) % 2 ? '#ffd030' : '#4ab0ff');
+  texto(dificuldade.letra, 204, 14, dificuldade.cor); // J, P ou S
   desenharBarraTribunal();
 }
 
@@ -199,9 +203,58 @@ function atualizarSelecao() {
   if (acoesPressionadas.has('voltar')) estado = 'titulo';
   if (acoesPressionadas.has('start') || acoesPressionadas.has('tiro')) {
     tocarSom('confirmar');
-    iniciarPartida(NAVES[selecionada]);
-    estado = 'jogando';
+    estado = 'dificuldade';
   }
+}
+
+// ---------- Escolha da dificuldade ----------
+const CHAVE_DIFICULDADE = 'nave-stg:dificuldade';
+let difSelecionada = Math.max(0, DIFICULDADES.findIndex((d) => d.letra === lerArmazenamento(CHAVE_DIFICULDADE, 'P')));
+const caixaDificuldade = (i) => [40, 64 + i * 40, 176, 32]; // x, y, largura, altura
+
+function confirmarDificuldade() {
+  dificuldade = DIFICULDADES[difSelecionada];
+  gravarArmazenamento(CHAVE_DIFICULDADE, dificuldade.letra);
+  tocarSom('confirmar');
+  iniciarPartida(NAVES[selecionada]);
+  estado = 'jogando';
+}
+
+function atualizarDificuldade() {
+  const n = DIFICULDADES.length;
+  if (acoesPressionadas.has('cima')) {
+    difSelecionada = (difSelecionada + n - 1) % n;
+    tocarSom('menu');
+  }
+  if (acoesPressionadas.has('baixo')) {
+    difSelecionada = (difSelecionada + 1) % n;
+    tocarSom('menu');
+  }
+  if (acoesPressionadas.has('voltar')) estado = 'selecao';
+  else if (acoesPressionadas.has('start') || acoesPressionadas.has('tiro')) confirmarDificuldade();
+}
+
+function desenharDificuldade() {
+  fundoEscuro(0.45);
+  texto('ESCOLHA O NÍVEL', LARGURA / 2, 14, '#ffd030', 8, 'center');
+  desenharSpriteNave(NAVES[selecionada], LARGURA / 2, 40, 1);
+
+  DIFICULDADES.forEach((d, i) => {
+    const [x, y, w, h] = caixaDificuldade(i);
+    const ativa = i === difSelecionada;
+    ctx.fillStyle = ativa ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.4)';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = ativa ? ((quadro >> 3) % 2 ? d.cor : '#ffffff') : '#3a3a5a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    texto(d.nome, LARGURA / 2, y + 6, ativa ? d.cor : '#8a8aaa', 8, 'center');
+    texto(`CICLOS DE ${d.segundos} SEGUNDOS`, LARGURA / 2, y + 18, ativa ? '#ffffff' : '#6a6a8a', 8, 'center');
+  });
+
+  if (piscaLento()) {
+    texto(ehToque() ? 'TOQUE NO NÍVEL' : 'ENTER CONFIRMA', LARGURA / 2, 192, '#ffffff', 8, 'center');
+  }
+  texto(ehToque() ? 'B: VOLTAR' : 'ESC: VOLTAR', LARGURA / 2, 206, '#6a6a8a', 8, 'center');
 }
 
 const xMiniatura = (i) => Math.round((LARGURA / (NAVES.length + 1)) * (i + 1));
@@ -404,6 +457,16 @@ function tocarTela(x, y) {
         acoesPressionadas.add('start');
       }
       break;
+    case 'dificuldade':
+      // tocar num nível escolhe e já confirma
+      DIFICULDADES.forEach((_, i) => {
+        const [ox, oy, w, h] = caixaDificuldade(i);
+        if (x >= ox && x <= ox + w && y >= oy && y <= oy + h) {
+          difSelecionada = i;
+          confirmarDificuldade();
+        }
+      });
+      break;
     case 'gameover':
       OPCOES_HORA_EXTRA.forEach(([ox, oy, w, h], i) => {
         if (x >= ox && x <= ox + w && y >= oy - 6 && y <= oy + h + 6) {
@@ -418,7 +481,7 @@ function tocarTela(x, y) {
 // ---------- Música de cada momento ----------
 function musicaDoMomento() {
   if (estado === 'jogando') return ehCicloChefe(jogo.ciclo) || jogo.extra ? 'chefe' : 'fase';
-  if (['titulo', 'selecao', 'ranking', 'creditos'].includes(estado)) return 'menu';
+  if (['titulo', 'selecao', 'dificuldade', 'ranking', 'creditos'].includes(estado)) return 'menu';
   return null; // pausa, game over, nome e vitória ficam sem música
 }
 
@@ -450,6 +513,9 @@ function atualizar() {
       break;
     case 'selecao':
       atualizarSelecao();
+      break;
+    case 'dificuldade':
+      atualizarDificuldade();
       break;
     case 'jogando':
       if (apertou('pausa', 'start', 'voltar')) estado = 'pausa';
@@ -506,6 +572,7 @@ function desenhar() {
 
   if (estado === 'titulo') desenharTitulo();
   if (estado === 'selecao') desenharSelecao();
+  if (estado === 'dificuldade') desenharDificuldade();
   if (estado === 'pausa') desenharPausa();
   if (estado === 'gameover') desenharGameOver();
   if (estado === 'ranking') desenharTelaRanking();

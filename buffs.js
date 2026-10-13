@@ -56,6 +56,14 @@ const TIPOS_BUFF = {
       mostrarMensagem(`DISSÍDIO: PODER +${Math.round((nave.reajuste - 1) * 100)}%`, '#ffd030');
     },
   },
+  ferias: {
+    especial: true, rotulo: 'FÉRIAS', icone: 'guardaSol',
+    aplicar() {
+      nave.ferias = true; // imune até o fim do ciclo atual (ciclos.js desliga ao trocar de ciclo)
+      placar += 3000;
+      mostrarMensagem('FÉRIAS! IMUNE NESTE CICLO', '#ffd030');
+    },
+  },
   decimo2: {
     especial: true, rotulo: 'DÉCIMO 2/2',
     aplicar() {
@@ -127,7 +135,8 @@ function desenharBuffs() {
   for (const b of buffs) {
     const x = Math.round(b.x);
     const y = Math.round(b.y);
-    if (b.d.especial) desenharCedula(b, x, y);
+    if (b.d.icone === 'guardaSol') desenharGuardaSol(b, x, y);
+    else if (b.d.especial) desenharCedula(b, x, y);
     else desenharCapsula(b, x, y);
   }
 }
@@ -150,15 +159,50 @@ function desenharCapsula(b, x, y) {
   ctx.fillText(b.d.letra, x - 3, y - 3);
 }
 
-// buff especial: uma cédula verde com o nome por cima
-function desenharCedula(b, x, y) {
-  // brilho pulsante em volta
+// brilho pulsante em volta dos buffs especiais
+function desenharBrilho(x, y, cor = '#ffd030') {
   const raio = 13 + Math.round(Math.sin(quadro / 6) * 2);
-  ctx.strokeStyle = (quadro >> 2) % 2 ? '#ffd030' : '#ffffff';
+  ctx.strokeStyle = (quadro >> 2) % 2 ? cor : '#ffffff';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(x + 0.5, y + 0.5, raio, 0, Math.PI * 2);
   ctx.stroke();
+}
+
+// nome do buff especial, preso dentro da tela
+function desenharRotulo(b, x, y) {
+  const meia = (b.d.rotulo.length * 8) / 2;
+  const lx = Math.min(LARGURA - meia - 2, Math.max(meia + 2, x));
+  texto(b.d.rotulo, lx, y - 20, (quadro >> 3) % 2 ? '#ffd030' : '#ffffff', 8, 'center');
+}
+
+// Férias: guarda-sol listrado fincado na areia
+function desenharGuardaSol(b, x, y) {
+  desenharBrilho(x, y, '#4ab0ff');
+  // areia
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(x - 9, y + 5, 18, 5);
+  ctx.fillStyle = '#f0d080';
+  ctx.fillRect(x - 8, y + 6, 16, 3);
+  // haste
+  ctx.fillStyle = '#5a3a1a';
+  ctx.fillRect(x, y - 5, 1, 11);
+  // cúpula em gomos vermelhos e brancos
+  for (let r = 0; r < 6; r++) {
+    const meia = 3 + Math.round(r * 1.6);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x - meia - 1, y - 9 + r, meia * 2 + 3, 1);
+    for (let px = -meia; px <= meia; px++) {
+      ctx.fillStyle = Math.floor((px + 12) / 3) % 2 ? '#ff3040' : '#ffffff';
+      ctx.fillRect(x + px, y - 9 + r, 1, 1);
+    }
+  }
+  desenharRotulo(b, x, y);
+}
+
+// buff especial: uma cédula verde com o nome por cima
+function desenharCedula(b, x, y) {
+  desenharBrilho(x, y);
 
   ctx.fillStyle = '#06200c';
   ctx.fillRect(x - 12, y - 7, 24, 14);
@@ -169,9 +213,5 @@ function desenharCedula(b, x, y) {
   ctx.fillStyle = '#1f8a3a';
   ctx.fillRect(x - 4, y - 4, 8, 8);
   texto('$', x, y - 3, '#ffd030', 8, 'center');
-
-  // nome do buff, preso dentro da tela
-  const meia = (b.d.rotulo.length * 8) / 2;
-  const lx = Math.min(LARGURA - meia - 2, Math.max(meia + 2, x));
-  texto(b.d.rotulo, lx, y - 20, (quadro >> 3) % 2 ? '#ffd030' : '#ffffff', 8, 'center');
+  desenharRotulo(b, x, y);
 }
